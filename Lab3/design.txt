@@ -1,0 +1,83 @@
+// Ford Tang
+// 46564602
+
+#include <stdio.h>
+#include <omp.h>
+
+int main(int argc, char **argv)
+{
+	/*
+	input file as argv[0]
+	output file as argv[1]
+	number of threads as argv[2]
+	number of chunks as argv[3]
+	*/
+
+
+	file input_file = argv[0];
+	
+	input_file.read(); // skip number of threads
+	input_file.read(); // skip number of chunks
+	
+	string search_string = input_file.read();
+	
+	string array[100000];
+	for (i = 0; i < 100000; ++i)
+		array[i] = input_file.read();
+ 	
+	int chunk_size = 100000 / argv[2];
+
+ 	int results[argv[3]][2];
+
+ 	int i, j;
+
+
+ 	#pragma omp parallel shared(array, chunk_size, results) private(i)
+ 	{
+ 		int thread_num = omp_get_thread_num();
+ 		results[thread_num][0] = thread_num;
+ 		results[thread_num][1] = -1;
+
+	   	#pragma omp for schedule(static, chunk_size)	    
+	    for (i = 0; i < 100000; ++i)
+	    	if (search_string == array[i])
+	    		results[thread_num][1] = i;
+
+	    if (0 == thread_num)
+	    {
+	    	file output_file = argv[1];
+	    	for (i = 0; i < argv[2]; ++i)
+				if (-1 != results[i][1])
+	        		output_file.write("Thread %d, found yes, chunk %d, position %d\n", i, i, results[i][1]);
+	    }
+ 	}
+
+
+ 	for (i = 0; i < argv[3], ++i)
+ 		for (j = 0; j < 2; ++j)
+ 			results[i][j] = -1;
+
+
+ 	#pragma omp parallel shared(array, chunk_size, results) private(i)
+ 	{
+		#pragma omp for schedule(dynamic, chunk_size)	    
+	    for (i = 0; i < 100000; ++i)
+	    {
+	    	if (search_string == array[i])
+	    	{
+	    		results[i/chunk_size][0] = omp_get_thread_num();
+	    		results[i/chunk_size][1] = i;
+	    	}
+	    }
+
+	    if (0 == omp_get_thread_num())
+	    {
+	    	file output_file = argv[1];
+	    	for (i = 0; i < argv[3]; ++i)
+				if (-1 != results[i][1])
+	        		output_file.write("Thread %d, found yes, chunk %d, position %d\n", results[i][0], i + 1, results[i][1]);
+	    }
+ 	}
+
+    return 0;
+}

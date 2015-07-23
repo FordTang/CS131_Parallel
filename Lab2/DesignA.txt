@@ -1,0 +1,60 @@
+char* search_string
+char lines[100000][15]
+
+void readfile(input_file)
+{
+	input_file.read() // skip Thread number
+	input_file.read() // skip slice amount
+	search_string = input_file.read()
+	unsigned int i;
+	for (i = 0; i < 100000; ++i)
+		lines[i] = input_file.read()
+}
+
+int main(input)
+{	
+	unsigned int size
+	unsigned int rank
+	unsigned int t1
+	unsigned int t2
+
+	MPI_Init(input)
+	MPI_Comm_rank(rank)
+	MPI_Comm_size(size)
+	
+	t1 = MPI_Wtime();
+	
+	lines_slice[] // small array
+	
+	if (rank == 0)
+		readfile(input_file)
+	
+	MPI_Scatter(lines, 100000 * 15, MPI_UNSIGNED_CHAR, lines_slice, (100000 / size) * 15, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD)
+	
+	found = 0;
+	
+	for (i = 0; i < (100000/slices) * 15; i+=15)
+	{
+		if (!strcmp(search_string, lines_slice[i]))
+		{
+			found = 1;
+			print("Thread %d, found yes, slice %d, position %d", rank, rank, (((100000 / size) * rank) + i/15))
+		}
+	}
+	
+	if (!found)
+	{
+		print("Thread %d, found no, slice -1, position -1", rank)
+	}
+	
+	//MPI_Gather might not be necessary
+	MPI_Gather(&lines_slice, (100000 / size) * 15, MPI_UNSIGNED_CHAR, lines, 100000 * 15, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD)
+	
+	t2 = MPI_Wtime()
+	
+	MPI_Finalize()
+	
+	print("Total execution time: %d", t2-t1)
+	
+	return 0
+}
